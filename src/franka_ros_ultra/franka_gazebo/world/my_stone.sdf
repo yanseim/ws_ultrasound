@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="panda_ultrasound">
+    <!--A global light source-->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!--A ground plane-->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <!--A Table-->
+    <include>
+      <uri>model://table</uri>
+      <pose>0.016428 0.000584 0.0 0 -0 0</pose>
+      <static>1</static>
+    </include>
+    <!-- A kinect -->
+    <include>
+      <uri>model://kinect</uri>
+      <pose>0.0 0.0 1.5 0 1.5707963 0</pose>
+      <static>1</static>
+    </include>
+    <!-- A male torse -->
+    <!-- <include>
+      <uri>model://male_torso</uri>
+      <pose>0 1.5 0 -1.5707963 0 0</pose>
+      <static>1</static>
+    </include> -->
+  </world>
+</sdf>
