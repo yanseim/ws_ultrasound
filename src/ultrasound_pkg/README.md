@@ -111,3 +111,9 @@ https://github.com/frankaemika/franka_ros/issues/197
                         +0* (jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext;
       ```
       无接触时无论是位置还是方向上的误差都很小；有接触时，各个方向上会有耦合（也就是说z方向上受力可能会影响到其他方向，这也符合理论）。但是，如果把`F_ext`那一项前面的0去掉，仿真里就会乱飞，因为`(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext`这一项还是很大。不知道实物会怎样。
+
+**0625**
+* 完成了**末端还是gripper**，**水平桌面上**的轨迹跟踪程序`my_cartesian_impedance_traj_controller.cpp`。`F_ext`这一项仍然是没有放出来，所以阻抗模型还是有耦合。效果尚可。运行指令如下：
+  ```
+  roslaunch franka_gazebo panda.launch x:=-0.5 world:=$(rospack find franka_gazebo)/world/my_stone.sdf controller:=my_cartesian_impedance_traj_controller rviz:=false
+  ```

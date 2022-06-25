@@ -71,4 +71,9 @@
       copied from cartesian_impedance_example_controller.cpp
     </description>
   </class>
+  <class name="franka_example_controllers/MyCartesianImpedanceTrajController" type="franka_example_controllers::MyCartesianImpedanceTrajController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      copied from cartesian_impedance_example_controller.cpp
+    </description>
+  </class>
 </library>

@@ -84,6 +84,7 @@ add_library(franka_example_controllers
   src/my_cartesian_impedance_controller.cpp
   src/my_pd_plus_gravity_controller.cpp
   src/my_inverse_dynamic_controller.cpp
+  src/my_cartesian_impedance_traj_controller.cpp
 )
 
 add_dependencies(franka_example_controllers

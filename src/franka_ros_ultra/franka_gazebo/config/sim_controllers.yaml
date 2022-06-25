@@ -145,3 +145,15 @@ my_inverse_dynamic_controller:
     - $(arg arm_id)_joint5
     - $(arg arm_id)_joint6
     - $(arg arm_id)_joint7
+
+my_cartesian_impedance_traj_controller:
+  type: franka_example_controllers/MyCartesianImpedanceTrajController
+  arm_id: $(arg arm_id)
+  joint_names:
+    - $(arg arm_id)_joint1
+    - $(arg arm_id)_joint2
+    - $(arg arm_id)_joint3
+    - $(arg arm_id)_joint4
+    - $(arg arm_id)_joint5
+    - $(arg arm_id)_joint6
+    - $(arg arm_id)_joint7
