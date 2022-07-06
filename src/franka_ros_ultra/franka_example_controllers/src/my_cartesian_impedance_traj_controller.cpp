@@ -356,7 +356,7 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
     orientation_d_[0] = std::sin(0.5 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
     orientation_d_[1] = 0;
     orientation_d_[2] = 0;
-    orientation_d_[3] = std::sin(0.5 * std::cos(M_PI / 10.0 * elapsed_time_.toSec()));
+    orientation_d_[3] = std::cos(0.5 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
 }
 
 void MyCartesianImpedanceTrajController::stopping(const ros::Time &time){
