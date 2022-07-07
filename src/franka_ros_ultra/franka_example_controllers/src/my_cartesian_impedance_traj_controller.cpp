@@ -344,7 +344,8 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
 //   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
 //   orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
 
-    position_d_[0] = position_d_target_[0] + radius * std::sin(M_PI / 10.0 * elapsed_time_.toSec());
+    radius = 0.1;
+    position_d_[0] = position_d_target_[0];
     position_d_[1] = position_d_target_[1] + radius * (1 - std::cos(M_PI / 10.0 * elapsed_time_.toSec()));
     if (position_d_[2]>0.3970) {
         position_d_[2] -= 0.00001;
