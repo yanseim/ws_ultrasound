@@ -317,8 +317,10 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
     // std::cout<<"tau_d"<<std::endl<<tau_d<<std::endl;
 
     std::cout<< "time" << std::endl << elapsed_time_.toSec() <<std::endl;
-    std::cout<< "position_d" << std::endl << position_d_ <<std::endl;
-    std::cout<< "x_d_ddot" << std::endl << x_d_ddot <<std::endl; 
+    // std::cout<< "position_d" << std::endl << position_d_ <<std::endl;
+    // std::cout<< "x_d_ddot" << std::endl << x_d_ddot <<std::endl; 
+    std::cout<< "orientation" << std::endl << orientation.coeffs() <<std::endl;
+    std::cout<< "orientation_d_" << std::endl << orientation_d_.coeffs() <<std::endl;
   }
 
   //yxj 0525
@@ -352,11 +354,13 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
     }
 
     // yxj 0706 orientation trajectory
-    double amplitude = 1;
-    orientation_d_[0] = std::sin(0.5 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
-    orientation_d_[1] = 0;
-    orientation_d_[2] = 0;
-    orientation_d_[3] = std::cos(0.5 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
+    double amplitude = 0.5;
+    // orientation_d_.x() = std::sin(0.05 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
+    // orientation_d_.y() = 0;
+    // orientation_d_.z() = 0;
+    // orientation_d_.w() = std::cos(0.05 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
+    orientation_d_ = Eigen::Quaterniond(std::sin(0.5 * amplitude * std::sin(M_PI / 10.0 * elapsed_time_.toSec())),
+      std::cos(0.5 * amplitude *std::sin(M_PI / 10.0 * elapsed_time_.toSec())),0,0);
 }
 
 void MyCartesianImpedanceTrajController::stopping(const ros::Time &time){

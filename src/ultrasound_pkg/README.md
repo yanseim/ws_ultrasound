@@ -117,3 +117,9 @@ https://github.com/frankaemika/franka_ros/issues/197
   ```
   roslaunch franka_gazebo panda.launch x:=-0.5 world:=$(rospack find franka_gazebo)/world/my_stone.sdf controller:=my_cartesian_impedance_traj_controller rviz:=false
   ```
+
+**0707**
+* 加上方向轨迹
+  ```
+  roslaunch franka_gazebo panda.launch x:=-0.5 controller:=my_cartesian_impedance_traj_controller rviz:=false
+  ```
