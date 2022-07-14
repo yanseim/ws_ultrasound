@@ -288,18 +288,19 @@ void MyCartesianImpedanceController::update(const ros::Time& time,
   if (yxj_counter%1000==0){
     yxj_counter=0;
     std::cout<<"============"<<std::endl;
-    // std::cout<<"M_d"<<std::endl<<M_d<<std::endl;
+    std::cout<<"M_d"<<std::endl<<M_d<<std::endl;
+    std::cout<<"M"<<std::endl<<M<<std::endl;
     // std::cout<<"K_d"<<std::endl<<K_d<<std::endl;
     // std::cout<<"D_d"<<std::endl<<D_d<<std::endl;
-    std::cout<< "error" <<std::endl<< error<<std::endl;
-    std::cout<< "error_dot" <<std::endl<< error_dot<<std::endl;
-    std::cout<< "K_d * error"<<std::endl<<K_d * error<<std::endl;
-    std::cout<< "D_d * error_dot"<<std::endl<<D_d * error_dot<<std::endl;
+    // std::cout<< "error" <<std::endl<< error<<std::endl;
+    // std::cout<< "error_dot" <<std::endl<< error_dot<<std::endl;
+    // std::cout<< "K_d * error"<<std::endl<<K_d * error<<std::endl;
+    // std::cout<< "D_d * error_dot"<<std::endl<<D_d * error_dot<<std::endl;
     // std::cout<< "F_ext"<<std::endl<<F_ext << std::endl;
     // std::cout<< "-K_d * error - D_d * error_dot"<<std::endl<<-K_d * error - D_d * error_dot<<std::endl;
     // std::cout<< "- M_d * jacobian_dot *dq"<< std::endl<<- M_d * jacobian_dot *dq<<std::endl;
-    std::cout<< "(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext"<< std::endl<<(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext<<std::endl;
-    
+    std::cout<< "(jacobian.transpose() - M * jacobian_pinv * M_d.inverse())"<< std::endl<<(jacobian.transpose() - M * jacobian_pinv * M_d.inverse())<<std::endl;
+    std::cout<<"jacobian"<< std::endl<<jacobian<<std::endl;
     // std::cout<<"tau_ext"<<std::endl<<tau_ext<<std::endl;
     // std::cout<<"J^T * F_ext"<<std::endl<<jacobian.transpose() * F_ext<<std::endl;
 

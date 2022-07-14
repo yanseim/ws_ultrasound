@@ -185,6 +185,37 @@ void CartesianImpedanceExampleController::update(const ros::Time& /*time*/,
     joint_handles_[i].setCommand(tau_d(i));
   }
 
+  if (yxj_counter%1000==0){
+    yxj_counter=0;
+    std::cout<<"============"<<std::endl;
+    std::cout<<"cartesian_stiffness_"<<std::endl<<cartesian_stiffness_<<std::endl;
+    std::cout<<"cartesian_damping_"<<std::endl<<cartesian_damping_<<std::endl;
+    std::cout<<"nullspace_stiffness_"<<std::endl<<nullspace_stiffness_<<std::endl;
+    // std::cout<< "error" <<std::endl<< error<<std::endl;
+    // std::cout<< "error_dot" <<std::endl<< error_dot<<std::endl;
+    // std::cout<< "K_d * error"<<std::endl<<K_d * error<<std::endl;
+    // std::cout<< "D_d * error_dot"<<std::endl<<D_d * error_dot<<std::endl;
+    // std::cout<< "F_ext"<<std::endl<<F_ext << std::endl;
+    // std::cout<< "-K_d * error - D_d * error_dot"<<std::endl<<-K_d * error - D_d * error_dot<<std::endl;
+    // std::cout<< "- M_d * jacobian_dot *dq"<< std::endl<<- M_d * jacobian_dot *dq<<std::endl;
+    // std::cout<< "(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext"<< std::endl<<(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext<<std::endl;
+    
+    // std::cout<<"tau_ext"<<std::endl<<tau_ext<<std::endl;
+    // std::cout<<"J^T * F_ext"<<std::endl<<jacobian.transpose() * F_ext<<std::endl;
+
+    // std::cout<< "tau_task"<<std::endl<<tau_task << std::endl<<"----------"<<std::endl;
+    // std::cout<<"tau_ext_read"<<std::endl<<tau_ext_read<<std::endl;
+    // std::cout<<"tau_ext_calc"<<std::endl<<tau_ext_calc<<std::endl;
+    // std::cout<<"tau_nullspace"<<std::endl<<tau_nullspace<<std::endl;
+    // std::cout<<"tau_d"<<std::endl<<tau_d<<std::endl;
+
+    // std::cout<< "time" << std::endl << elapsed_time_.toSec() <<std::endl;
+    // std::cout<< "position_d" << std::endl << position_d_ <<std::endl;
+    // std::cout<< "x_d_ddot" << std::endl << x_d_ddot <<std::endl; 
+    // std::cout<< "orientation" << std::endl << orientation.coeffs() <<std::endl;
+    // std::cout<< "orientation_d_" << std::endl << orientation_d_.coeffs() <<std::endl;
+  }
+
   // update parameters changed online either through dynamic reconfigure or through the interactive
   // target by filtering
   cartesian_stiffness_ =
