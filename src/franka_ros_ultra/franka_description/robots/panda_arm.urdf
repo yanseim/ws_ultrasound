@@ -429,5 +429,75 @@
     <parent link="panda_link7"/>
     <child link="panda_link8"/>
   </joint>
+  <joint name="panda_hand_joint" type="fixed">
+    <parent link="panda_link8"/>
+    <child link="panda_transducer"/>
+    <origin rpy="0 0 0" xyz="-0.002 -0.002 0.046"/>
+  </joint>
+  <!-- sub-link defining detailed meshes for collision with environment -->
+  <link name="panda_transducer">
+    <visual>
+      <geometry>
+        <mesh filename="package://franka_description/meshes/visual/transducer.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://franka_description/meshes/collision/transducer.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- sub-link defining coarse geometries of real robot's internal self-collision -->
+  <link name="panda_transducer_sc">
+    <collision>
+      <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.04"/>
+      <geometry>
+        <cylinder length="0.1" radius="0.07"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.05 0.04"/>
+      <geometry>
+        <sphere radius="0.07"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.05 0.04"/>
+      <geometry>
+        <sphere radius="0.07"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin rpy="1.5707963267948966 0 0" xyz="0 0 0.1"/>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.05 0.1"/>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.05 0.1"/>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- fixed joint between both sub-links -->
+  <joint name="panda_transducer_sc_joint" type="fixed">
+    <origin rpy="0 0 0"/>
+    <parent link="panda_transducer"/>
+    <child link="panda_transducer_sc"/>
+  </joint>
+  <!-- Define the hand_tcp frame -->
+  <link name="panda_transducer_tcp"/>
+  <joint name="panda_transducer_tcp_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.1034"/>
+    <parent link="panda_transducer"/>
+    <child link="panda_transducer_tcp"/>
+  </joint>
 </robot>
 
