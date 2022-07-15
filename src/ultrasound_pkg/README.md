@@ -123,3 +123,11 @@ https://github.com/frankaemika/franka_ros/issues/197
   ```
   roslaunch franka_gazebo panda.launch x:=-0.5 controller:=my_cartesian_impedance_traj_controller rviz:=false
   ```
+
+**0714**
+```
+roslaunch franka_gazebo panda.launch x:=-0.5 controller:=my_cartesian_impedance_traj_controller rviz:=false use_gripper:=true
+```
+* 补充了之前的`my_cartesian_impedance_traj_controller`.将`x_d_ddot`中角度的3维写好了。思路就是四元数作差转轴角表示求得角速度`omega`,然后角速度数值作差求得角加速度。(不知道理论上是否有问题，从效果来看尚可。)
+* 听取了gk和yb的建议在外力上加入低通滤波，瞬间就好了。当前把外力项`(jacobian.transpose()-M*jacobian_pinv*M_d.inverse())*F_ext_filtered_`放出来，并且`M_d`设置成对角阵也没事。之前不ok的原因并不是外力不准，而是仿真启动瞬间力传感器会有一个冲击，之前没加滤波的时候，这个冲击被用于计算控制力矩，导致机械臂乱动，(可从数据中`log_F_ext`和`log_F_ext_filtered`的对比中得出。)现在不会了。
+* 现在的问题只有距离目标位姿不准。尤其是y方向的角度。

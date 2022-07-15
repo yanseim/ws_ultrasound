@@ -103,21 +103,29 @@ bool MyCartesianImpedanceController::init(hardware_interface::RobotHW* robot_hw,
   cartesian_damping_.setZero();
 
   // yxj add 0525
-  M_d << 1 * Eigen::MatrixXd::Identity(6, 6);
-  M_d(0,0) = 4;
-  M_d(1,1) = 2;
-  M_d(2,2) = 2;
-  M_d(3,3) = 0.17;
-  M_d(4,4) = 0.279;
-  M_d(5,5) = 0.039;
+  // M_d << 1 * Eigen::MatrixXd::Identity(6, 6);
+  // M_d(0,0) = 4;
+  // M_d(1,1) = 2;
+  // M_d(2,2) = 2;
+  // M_d(3,3) = 0.17;
+  // M_d(4,4) = 0.279;
+  // M_d(5,5) = 0.039;
+
 //   M_d.block<3,3>(0,0) = 1*Eigen::MatrixXd::Identity(3, 3);
 //   M_d.block<3,3>(3,3) = 0.3*Eigen::MatrixXd::Identity(3, 3);
 
-  K_d.block<3,3>(0,0) = 30*Eigen::MatrixXd::Identity(3, 3);
-  K_d.block<3,3>(3,3) = 1.2*Eigen::MatrixXd::Identity(3, 3);
-  D_d.block<3,3>(0,0) = 10.95*Eigen::MatrixXd::Identity(3, 3);
-  D_d.block<3,3>(3,3) = 2.19*Eigen::MatrixXd::Identity(3, 3);
-  nullspace_stiffness_ = 0.05;
+  // K_d.block<3,3>(0,0) = 30*Eigen::MatrixXd::Identity(3, 3);
+  // K_d.block<3,3>(3,3) = 1.2*Eigen::MatrixXd::Identity(3, 3);
+  // D_d.block<3,3>(0,0) = 10.95*Eigen::MatrixXd::Identity(3, 3);
+  // D_d.block<3,3>(3,3) = 2.19*Eigen::MatrixXd::Identity(3, 3);
+  // nullspace_stiffness_ = 0.05;
+
+  M_d << 1000 * Eigen::MatrixXd::Identity(6, 6);
+  K_d.block<3,3>(0,0) = 100*Eigen::MatrixXd::Identity(3, 3);
+  K_d.block<3,3>(3,3) = 30*Eigen::MatrixXd::Identity(3, 3);
+  D_d.block<3,3>(0,0) = 20*Eigen::MatrixXd::Identity(3, 3);
+  D_d.block<3,3>(3,3) = 10.95*Eigen::MatrixXd::Identity(3, 3);
+  nullspace_stiffness_ = 0.5;
 
   return true;
 }
@@ -167,6 +175,8 @@ void MyCartesianImpedanceController::starting(const ros::Time& /*time*/) {
   Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
   // Bias correction for the current external torque
   tau_ext_initial_ = tau_measured - gravity;
+
+  F_ext_filtered_<< 0,0,0,0,0,0;
 
 }
 
@@ -250,16 +260,20 @@ void MyCartesianImpedanceController::update(const ros::Time& time,
   nullspace_stiffness_ = 0.02;
 
   //yxj calculate jacobian_dot
-  Eigen::MatrixXd jacobian_dot;
+  Eigen::MatrixXd jacobian_dot, jacobian_analytic_dot;
   jacobian_dot = (jacobian - jacobian_last_)/period.toSec();// here must use =!!!
+  jacobian_analytic_dot = (jacobian_analytic - jacobian_analytic_last_)/period.toSec();
   Eigen::Matrix<double, 6, 1> error_dot;
   error_dot = (error-error_last_)/period.toSec();
 
-  M_d = jacobian_transpose_pinv * M * jacobian_pinv;
+  // M_d = jacobian_transpose_pinv * M * jacobian_pinv;
 
   tau_task << M * jacobian_pinv * M_d.inverse() * 
                   (-K_d * error - D_d * error_dot - M_d * jacobian_dot *dq)
-                  +0* (jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext;
+                  +(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext_filtered_;
+  // tau_task << M * jacobian_analytic_pinv * M_d.inverse() * 
+  //               (-K_d * error - D_d * error_dot - M_d * jacobian_analytic_dot *dq)
+  //               + (jacobian_analytic.transpose() - M * jacobian_analytic_pinv * M_d.inverse()) * F_ext_filtered_;
 
   
 
@@ -283,41 +297,47 @@ void MyCartesianImpedanceController::update(const ros::Time& time,
   tau_d << saturateTorqueRate(tau_d, tau_J_d);
   for (size_t i = 0; i < 7; ++i) {
     joint_handles_[i].setCommand(tau_d(i));
+    // joint_handles_[i].setCommand(tau_J_d(i)+tau_nullspace(i));
   }
 
   if (yxj_counter%1000==0){
     yxj_counter=0;
     std::cout<<"============"<<std::endl;
-    std::cout<<"M_d"<<std::endl<<M_d<<std::endl;
-    std::cout<<"M"<<std::endl<<M<<std::endl;
+    // std::cout<<"M_d"<<std::endl<<M_d<<std::endl;
+    // std::cout<<"M"<<std::endl<<M<<std::endl;
     // std::cout<<"K_d"<<std::endl<<K_d<<std::endl;
     // std::cout<<"D_d"<<std::endl<<D_d<<std::endl;
     // std::cout<< "error" <<std::endl<< error<<std::endl;
     // std::cout<< "error_dot" <<std::endl<< error_dot<<std::endl;
     // std::cout<< "K_d * error"<<std::endl<<K_d * error<<std::endl;
     // std::cout<< "D_d * error_dot"<<std::endl<<D_d * error_dot<<std::endl;
-    // std::cout<< "F_ext"<<std::endl<<F_ext << std::endl;
+    std::cout<< "tau_J_d"<<std::endl<<tau_J_d<<std::endl;
+    std::cout<< "F_ext"<<std::endl<<F_ext << std::endl;
     // std::cout<< "-K_d * error - D_d * error_dot"<<std::endl<<-K_d * error - D_d * error_dot<<std::endl;
     // std::cout<< "- M_d * jacobian_dot *dq"<< std::endl<<- M_d * jacobian_dot *dq<<std::endl;
-    std::cout<< "(jacobian.transpose() - M * jacobian_pinv * M_d.inverse())"<< std::endl<<(jacobian.transpose() - M * jacobian_pinv * M_d.inverse())<<std::endl;
-    std::cout<<"jacobian"<< std::endl<<jacobian<<std::endl;
+    std::cout<< "(jacobian.transpose() - M * jacobian_pinv * M_d.inverse())"<< std::endl<<(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()).squaredNorm()<<std::endl;
+    std::cout<< "(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext"<< std::endl<<(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext<<std::endl;
+    // std::cout<<"jacobian"<< std::endl<<jacobian<<std::endl;
     // std::cout<<"tau_ext"<<std::endl<<tau_ext<<std::endl;
     // std::cout<<"J^T * F_ext"<<std::endl<<jacobian.transpose() * F_ext<<std::endl;
 
     // std::cout<< "tau_task"<<std::endl<<tau_task << std::endl<<"----------"<<std::endl;
     // std::cout<<"tau_ext_read"<<std::endl<<tau_ext_read<<std::endl;
     // std::cout<<"tau_ext_calc"<<std::endl<<tau_ext_calc<<std::endl;
-    // std::cout<<"tau_nullspace"<<std::endl<<tau_nullspace<<std::endl;
-    // std::cout<<"tau_d"<<std::endl<<tau_d<<std::endl;
+    std::cout<<"tau_nullspace"<<std::endl<<tau_nullspace<<std::endl;
+    std::cout<<"tau_d"<<std::endl<<tau_d<<std::endl;
     
   }
 
   //yxj 0525
   jacobian_last_ = jacobian;
+  jacobian_analytic_last_ = jacobian_analytic;
   error_last_ = error;
   yxj_counter++;
   log_F_ext.push_back(F_ext);
   log_error.push_back(error);
+  log_tau.push_back(tau_d);
+  log_F_ext_filtered.push_back(F_ext_filtered_);
   log_t.push_back(time.toSec());
 
   // update parameters changed online either through dynamic reconfigure or through the interactive
@@ -331,18 +351,23 @@ void MyCartesianImpedanceController::update(const ros::Time& time,
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
+  F_ext_filtered_ = filter_params_ * F_ext + (1.0 - filter_params_) * F_ext_filtered_;
   orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
 }
 
 void MyCartesianImpedanceController::stopping(const ros::Time &time){
   ROS_INFO("Stopping Controller and Saving data......");
-  std::string path("/home/yan/yxj/ws_ultrasound/src/data/0603/");
+  std::string path("/home/yan/yxj/ws_ultrasound/src/data/0714/");
   std::string filename1("log_error.bin");
   std::string filename2("log_F_ext.bin");
   std::string filename3("log_t.bin");
-  saveData(log_error,path+filename1);
-  saveData(log_F_ext,path+filename2);
+  std::string filename4("log_tau.bin");
+  std::string filename5("log_F_ext_filtered.bin");
+  saveData6(log_error,path+filename1);
+  saveData6(log_F_ext,path+filename2);
   saveData_time(log_t,path+filename3);
+  saveData7(log_tau,path+filename4);
+  saveData6(log_F_ext_filtered,path+filename5);
   ROS_INFO("The Data is saved......");
 } 
 
@@ -391,7 +416,25 @@ void MyCartesianImpedanceController::equilibriumPoseCallback(
 }
 
 //yxj 0603
-void MyCartesianImpedanceController::saveData(std::vector<Eigen::Matrix<double,6,1>> &Data, std::string filePath){
+void MyCartesianImpedanceController::saveData6(std::vector<Eigen::Matrix<double,6,1>> &Data, std::string filePath){
+  //format: 4 bytes vector number + 4 bytes totalsize + data
+	std::ofstream ofile(filePath.c_str(), std::ios::binary);
+	if(ofile.is_open()==false){
+		std::cout<<"Open file fail!"<<std::endl;
+		exit(1);
+	}
+	int length = Data.size();
+	ofile.write((char*)&length, sizeof(int)); 
+	
+	int totalSize = Data.size()*sizeof(Data[0]);
+	ofile.write((char*)&totalSize, sizeof(int));
+	
+	ofile.write((char*)&Data[0], totalSize);
+	
+	ofile.close();
+} 
+
+void MyCartesianImpedanceController::saveData7(std::vector<Eigen::Matrix<double,7,1>> &Data, std::string filePath){
   //format: 4 bytes vector number + 4 bytes totalsize + data
 	std::ofstream ofile(filePath.c_str(), std::ios::binary);
 	if(ofile.is_open()==false){

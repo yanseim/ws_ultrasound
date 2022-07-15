@@ -55,25 +55,30 @@ class MyCartesianImpedanceTrajController : public controller_interface::MultiInt
   Eigen::Matrix<double, 6, 6> cartesian_damping_target_;
   Eigen::Matrix<double, 7, 1> q_d_nullspace_;
   Eigen::Vector3d position_d_;
-  Eigen::Quaterniond orientation_d_;
+  Eigen::Quaterniond orientation_d_,orientation_d_last_;
   std::mutex position_and_orientation_d_target_mutex_;
   Eigen::Vector3d position_d_target_;
   Eigen::Quaterniond orientation_d_target_;
 
   // yxj 0525
-  Eigen::Matrix<double, 6, 7> jacobian_last_;
+  Eigen::Matrix<double, 6, 7> jacobian_last_,jacobian_analytic_last_;
   Eigen::Matrix<double, 6, 6> M_d;
   Eigen::Matrix<double, 6, 1> error_last_;
   Eigen::Matrix<double, 7, 1> tau_ext_initial_;
   Eigen::Matrix<double, 6, 6> K_d;
   Eigen::Matrix<double, 6, 6> D_d;
   Eigen::Matrix<double, 7, 1> dq_last_;
+  Eigen::Matrix<double, 6, 1> F_ext_filtered_;
+  Eigen::Matrix<double, 7, 1> orientation;
+  Eigen::Vector3d omega_d_last_;
   int yxj_counter=0;
-  std::vector<Eigen::Matrix<double, 6, 1>> log_F_ext,log_error;
+  std::vector<Eigen::Matrix<double, 6, 1>> log_F_ext,log_error,log_F_ext_filtered;
   std::vector<double> log_t;
+  std::vector<Eigen::Matrix<double, 7, 1>> log_tau;
 
   //save data; yxj 0603
-  void saveData(std::vector<Eigen::Matrix<double,6,1>> &Data, std::string filePath);
+  void saveData6(std::vector<Eigen::Matrix<double,6,1>> &Data, std::string filePath);
+  void saveData7(std::vector<Eigen::Matrix<double,7,1>> &Data, std::string filePath);
   void saveData_time(std::vector<double> &Data, std::string filePath);
   // Dynamic reconfigure
   std::unique_ptr<dynamic_reconfigure::Server<franka_example_controllers::compliance_paramConfig>>

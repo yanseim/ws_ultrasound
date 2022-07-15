@@ -113,11 +113,18 @@ bool MyCartesianImpedanceTrajController::init(hardware_interface::RobotHW* robot
 //   M_d.block<3,3>(0,0) = 1*Eigen::MatrixXd::Identity(3, 3);
 //   M_d.block<3,3>(3,3) = 0.3*Eigen::MatrixXd::Identity(3, 3);
 
-  K_d.block<3,3>(0,0) = 30*Eigen::MatrixXd::Identity(3, 3);
-  K_d.block<3,3>(3,3) = 1.2*Eigen::MatrixXd::Identity(3, 3);
-  D_d.block<3,3>(0,0) = 10.95*Eigen::MatrixXd::Identity(3, 3);
-  D_d.block<3,3>(3,3) = 2.19*Eigen::MatrixXd::Identity(3, 3);
-  nullspace_stiffness_ = 0.05;
+  // K_d.block<3,3>(0,0) = 30*Eigen::MatrixXd::Identity(3, 3);
+  // K_d.block<3,3>(3,3) = 1.2*Eigen::MatrixXd::Identity(3, 3);
+  // D_d.block<3,3>(0,0) = 10.95*Eigen::MatrixXd::Identity(3, 3);
+  // D_d.block<3,3>(3,3) = 2.19*Eigen::MatrixXd::Identity(3, 3);
+  // nullspace_stiffness_ = 0.05;
+
+  M_d << 1000 * Eigen::MatrixXd::Identity(6, 6);
+  K_d.block<3,3>(0,0) = 100*Eigen::MatrixXd::Identity(3, 3);
+  K_d.block<3,3>(3,3) = 30*Eigen::MatrixXd::Identity(3, 3);
+  D_d.block<3,3>(0,0) = 20*Eigen::MatrixXd::Identity(3, 3);
+  D_d.block<3,3>(3,3) = 10.95*Eigen::MatrixXd::Identity(3, 3);
+  nullspace_stiffness_ = 0.5;
 
   return true;
 }
@@ -167,6 +174,10 @@ void MyCartesianImpedanceTrajController::starting(const ros::Time& /*time*/) {
   Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
   // Bias correction for the current external torque
   tau_ext_initial_ = tau_measured - gravity;
+
+  F_ext_filtered_<< 0,0,0,0,0,0;
+  orientation_d_last_ = orientation_d_;
+  omega_d_last_<< 0,0,0;
 
   //yxj 0625
   elapsed_time_ = ros::Duration(0.0);
@@ -220,9 +231,13 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
   error.head(3) << position - position_d_;
 
   // yxj0625
-      x_d_ddot << -radius * M_PI * M_PI / 100.0 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()),
-      radius * M_PI * M_PI / 100.0 * std::cos(M_PI / 10.0 * elapsed_time_.toSec()),0,0,0,0;
-//   x_d_ddot<<0,0,0,0,0,0;
+  x_d_ddot.head(3) << -radius * M_PI * M_PI / 100.0 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()),
+  radius * M_PI * M_PI / 100.0 * std::cos(M_PI / 10.0 * elapsed_time_.toSec()),0;//position acceleration
+  Eigen::Vector3d omega_d;
+  Eigen::AngleAxisd angle_axis(orientation_d_.inverse() * orientation_d_last_);
+  omega_d = angle_axis.angle() * angle_axis.axis()/period.toSec();//=logarithm of quaternion/dt
+  
+  x_d_ddot.tail(3)<<(omega_d-omega_d_last_)/period.toSec() ;//orientation acceleration
 
   // orientation error
   if (orientation_d_.coeffs().dot(orientation.coeffs()) < 0.0) {
@@ -262,11 +277,11 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
   Eigen::Matrix<double, 6, 1> error_dot;
   error_dot = (error-error_last_)/period.toSec();
 
-  M_d = jacobian_transpose_pinv * M * jacobian_pinv;
+  // M_d = jacobian_transpose_pinv * M * jacobian_pinv;
 
   tau_task << M * jacobian_pinv * M_d.inverse() * 
-                  (M_d * x_d_ddot -K_d * error - D_d * error_dot - M_d * jacobian_dot *dq)
-                  +0* (jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext;
+                  (x_d_ddot - K_d * error - D_d * error_dot - M_d * jacobian_dot *dq)
+                  +(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext_filtered_;
 
   
 
@@ -281,7 +296,6 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
   // Desired torque
   tau_d << tau_task + tau_nullspace + coriolis;
   
-
   //cartesian gravity compensation PD control
   // tau_d = jacobian.transpose() *10*Eigen::MatrixXd::Identity(6, 6) * (-error) - jacobian.transpose() * 6.32* Eigen::MatrixXd::Identity(6, 6) * jacobian * dq;
   // tau_d = tau_d+tau_nullspace;
@@ -302,7 +316,7 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
     // std::cout<< "error_dot" <<std::endl<< error_dot<<std::endl;
     // std::cout<< "K_d * error"<<std::endl<<K_d * error<<std::endl;
     // std::cout<< "D_d * error_dot"<<std::endl<<D_d * error_dot<<std::endl;
-    // std::cout<< "F_ext"<<std::endl<<F_ext << std::endl;
+    std::cout<< "F_ext"<<std::endl<<F_ext << std::endl;
     // std::cout<< "-K_d * error - D_d * error_dot"<<std::endl<<-K_d * error - D_d * error_dot<<std::endl;
     // std::cout<< "- M_d * jacobian_dot *dq"<< std::endl<<- M_d * jacobian_dot *dq<<std::endl;
     // std::cout<< "(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext"<< std::endl<<(jacobian.transpose() - M * jacobian_pinv * M_d.inverse()) * F_ext<<std::endl;
@@ -318,17 +332,22 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
 
     std::cout<< "time" << std::endl << elapsed_time_.toSec() <<std::endl;
     // std::cout<< "position_d" << std::endl << position_d_ <<std::endl;
-    // std::cout<< "x_d_ddot" << std::endl << x_d_ddot <<std::endl; 
+    std::cout<< "x_d_ddot" << std::endl << x_d_ddot <<std::endl; 
     std::cout<< "orientation" << std::endl << orientation.coeffs() <<std::endl;
     std::cout<< "orientation_d_" << std::endl << orientation_d_.coeffs() <<std::endl;
   }
 
   //yxj 0525
   jacobian_last_ = jacobian;
+  jacobian_analytic_last_ = jacobian_analytic;
+  orientation_d_last_ = orientation_d_;
+  omega_d_last_ = omega_d;
   error_last_ = error;
   yxj_counter++;
   log_F_ext.push_back(F_ext);
   log_error.push_back(error);
+  log_tau.push_back(tau_d);
+  log_F_ext_filtered.push_back(F_ext_filtered_);
   log_t.push_back(time.toSec());
 
   // update parameters changed online either through dynamic reconfigure or through the interactive
@@ -341,12 +360,13 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
       filter_params_ * nullspace_stiffness_target_ + (1.0 - filter_params_) * nullspace_stiffness_;
   std::lock_guard<std::mutex> position_d_target_mutex_lock(
       position_and_orientation_d_target_mutex_);
+  F_ext_filtered_ = filter_params_ * F_ext + (1.0 - filter_params_) * F_ext_filtered_;
 //   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
 //   orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
 
     radius = 0.1;
     position_d_[0] = position_d_target_[0];
-    position_d_[1] = position_d_target_[1] + radius * (1 - std::cos(M_PI / 10.0 * elapsed_time_.toSec()));
+    position_d_[1] = position_d_target_[1] + radius * std::sin(M_PI / 10.0 * elapsed_time_.toSec());
     if (position_d_[2]>0.3970) {
         position_d_[2] -= 0.00001;
     }
@@ -356,26 +376,26 @@ void MyCartesianImpedanceTrajController::update(const ros::Time& time,
 
     // yxj 0706 orientation trajectory
     double amplitude = 0.5;
-    // orientation_d_.x() = std::sin(0.05 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
-    // orientation_d_.y() = 0;
-    // orientation_d_.z() = 0;
-    // orientation_d_.w() = std::cos(0.05 * std::sin(M_PI / 10.0 * elapsed_time_.toSec()));
+
     orientation_d_ = Eigen::Quaterniond(std::sin(0.5 * amplitude * std::sin(M_PI / 10.0 * elapsed_time_.toSec())),
-      std::cos(0.5 * amplitude *std::sin(M_PI / 10.0 * elapsed_time_.toSec())),0,0);
+      std::cos(0.5 * amplitude *std::sin(M_PI / 10.0 * elapsed_time_.toSec())),0,0);//define order is w,x,y,z
 }
 
 void MyCartesianImpedanceTrajController::stopping(const ros::Time &time){
   ROS_INFO("Stopping Controller and Saving data......");
-  std::string path("/home/yan/yxj/ws_ultrasound/src/data/0603/");
+  std::string path("/home/yan/yxj/ws_ultrasound/src/data/0714/traj/");
   std::string filename1("log_error.bin");
   std::string filename2("log_F_ext.bin");
   std::string filename3("log_t.bin");
-  saveData(log_error,path+filename1);
-  saveData(log_F_ext,path+filename2);
+  std::string filename4("log_tau.bin");
+  std::string filename5("log_F_ext_filtered.bin");
+  saveData6(log_error,path+filename1);
+  saveData6(log_F_ext,path+filename2);
   saveData_time(log_t,path+filename3);
+  saveData7(log_tau,path+filename4);
+  saveData6(log_F_ext_filtered,path+filename5);
   ROS_INFO("The Data is saved......");
 } 
-
 
 
 Eigen::Matrix<double, 7, 1> MyCartesianImpedanceTrajController::saturateTorqueRate(
@@ -421,7 +441,25 @@ void MyCartesianImpedanceTrajController::equilibriumPoseCallback(
 }
 
 //yxj 0603
-void MyCartesianImpedanceTrajController::saveData(std::vector<Eigen::Matrix<double,6,1>> &Data, std::string filePath){
+void MyCartesianImpedanceTrajController::saveData6(std::vector<Eigen::Matrix<double,6,1>> &Data, std::string filePath){
+  //format: 4 bytes vector number + 4 bytes totalsize + data
+	std::ofstream ofile(filePath.c_str(), std::ios::binary);
+	if(ofile.is_open()==false){
+		std::cout<<"Open file fail!"<<std::endl;
+		exit(1);
+	}
+	int length = Data.size();
+	ofile.write((char*)&length, sizeof(int)); 
+	
+	int totalSize = Data.size()*sizeof(Data[0]);
+	ofile.write((char*)&totalSize, sizeof(int));
+	
+	ofile.write((char*)&Data[0], totalSize);
+	
+	ofile.close();
+} 
+
+void MyCartesianImpedanceTrajController::saveData7(std::vector<Eigen::Matrix<double,7,1>> &Data, std::string filePath){
   //format: 4 bytes vector number + 4 bytes totalsize + data
 	std::ofstream ofile(filePath.c_str(), std::ios::binary);
 	if(ofile.is_open()==false){
