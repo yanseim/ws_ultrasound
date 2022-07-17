@@ -4,11 +4,11 @@
   <!-- Name of this panda -->
   <xacro:arg name="arm_id" default="panda" />
   <!-- Should a franka_gripper be mounted at the flange?" -->
-  <xacro:arg name="hand" default="false" />
+  <xacro:arg name="hand" default="true" />
   <!-- Is the robot being simulated in gazebo?" -->
   <xacro:arg name="gazebo" default="false" />
   <!-- Should a transducer be mounted at the flange? yxj20220714" -->
-  <xacro:arg name="transducer" default="true" />
+  <xacro:arg name="transducer" default="false" />
 
   <xacro:include filename="utils.xacro" />
   <xacro:include filename="panda_arm.xacro" />
